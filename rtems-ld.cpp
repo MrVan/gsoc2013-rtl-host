@@ -403,7 +403,7 @@ main (int argc, char* argv[])
       /*
        * Load the symbol table.
        */
-      cache.load_symbols (symbols);
+      cache.load_symbols (symbols, true);
 
       /*
        * Map ?

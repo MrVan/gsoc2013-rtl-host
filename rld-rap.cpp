@@ -66,6 +66,7 @@ namespace rld
       uint32_t    symtype;  //< The type of symbol.
       int         symsect;  //< The symbol's RAP section.
       uint32_t    symvalue; //< The symbol's default value.
+      uint32_t    symbinding;//< The symbol's binding of target symbol.
 
       /**
        * Construct the relocation using the file relocation, the offset of the
@@ -194,13 +195,15 @@ namespace rld
     {
       /**
        * Size of an external in the RAP file.
+       * Change from 3 to 4, just for an index slot
        */
-      static const uint32_t rap_size = sizeof (uint32_t) * 3;
+      static const uint32_t rap_size = sizeof (uint32_t) * 4;
 
       const uint32_t name;  //< The string table's name index.
       const sections sec;   //< The section the symbols belongs to.
       const uint32_t value; //< The offset from the section base.
       const uint32_t data;  //< The ELF st.info field.
+      const uint32_t index; //< The object index.
 
       /**
        * The constructor.
@@ -208,7 +211,8 @@ namespace rld
       external (const uint32_t name,
                 const sections sec,
                 const uint32_t value,
-                const uint32_t data);
+                const uint32_t data,
+                const uint32_t index);
 
       /**
        * Copy constructor.
@@ -308,8 +312,9 @@ namespace rld
        * Collection the symbols from the object file.
        *
        * @param obj The object file to collection the symbol from.
+       * @param index The object file index.
        */
-      void collect_symbols (object& obj);
+      void collect_symbols (object& obj, uint32_t index);
 
       /**
        * Write the compressed output file. This is the top level write
@@ -430,7 +435,8 @@ namespace rld
         symname (reloc.symname),
         symtype (reloc.symtype),
         symsect (reloc.symsect),
-        symvalue (reloc.symvalue)
+        symvalue (reloc.symvalue),
+        symbinding (reloc.symbinding)
     {
     }
 
@@ -673,6 +679,7 @@ namespace rld
                     << " reloc.addend=" << freloc.addend
                     << " reloc.symtype=" << freloc.symtype
                     << " reloc.symsect=" << freloc.symsect
+                    << " reloc.symbinding=" << freloc.symbinding
                     << std::endl;
 
         sec.relocs.push_back (relocation (freloc, offset));
@@ -688,11 +695,13 @@ namespace rld
     external::external (const uint32_t name,
                         const sections sec,
                         const uint32_t value,
-                        const uint32_t data)
+                        const uint32_t data,
+                        const uint32_t index)
       : name (name),
         sec (sec),
         value (value),
-        data (data)
+        data (data),
+        index (index)
     {
     }
 
@@ -700,7 +709,8 @@ namespace rld
       : name (orig.name),
         sec (orig.sec),
         value (orig.value),
-        data (orig.data)
+        data (orig.data),
+        index (orig.index)
     {
     }
 
@@ -863,6 +873,8 @@ namespace rld
         objs.push_back (object (app_obj));
       }
 
+      uint32_t index = 0;
+
       for (objects::iterator oi = objs.begin (), poi = objs.begin ();
            oi != objs.end ();
            ++oi)
@@ -887,7 +899,7 @@ namespace rld
           ++poi;
         }
 
-        collect_symbols (obj);
+        collect_symbols (obj, ++index);
 
         relocs_size += obj.get_relocations ();
 
@@ -923,7 +935,7 @@ namespace rld
     }
 
     void
-    image::collect_symbols (object& obj)
+    image::collect_symbols (object& obj, uint32_t index)
     {
       symbols::pointers& esyms = obj.obj.external_symbols ();
       for (symbols::pointers::const_iterator ei = esyms.begin ();
@@ -931,15 +943,38 @@ namespace rld
            ++ei)
       {
         const symbols::symbol& sym = *(*ei);
+        std::string debug_sym;
 
-        if ((sym.type () == STT_OBJECT) || (sym.type () == STT_FUNC))
+        /* Ignore the null name */
+        if (sym.name () == "") {
+          continue; 
+        }
+
+        /* Ignore the debug symbols */
+        if (debug_sym.find ("debug") != -1)
+          continue;
+
+        /* Ignore the $a $d $t symbols*/
+        if (elf::object_machine_type () == EM_ARM) {
+          if ((sym.name () == "$a") || (sym.name () == "$d") ||
+            (sym.name () == "$t"))
+            continue;
+        }
+
+        if ((sym.type () == STT_OBJECT) || (sym.type () == STT_FUNC) || 
+            ((sym.binding () == STB_LOCAL) && (sym.type ()) == STT_NOTYPE))
         {
-          if ((sym.binding () == STB_GLOBAL) || (sym.binding () == STB_WEAK))
+          if ((sym.binding () == STB_GLOBAL) || (sym.binding () == STB_WEAK) ||
+            ((sym.binding () == STB_LOCAL) && (sym.type ()) == STT_NOTYPE))
           {
             int         symsec = sym.section_index ();
             sections    rap_sec = obj.find (symsec);
             section&    sec = obj.secs[rap_sec];
             std::size_t name;
+
+            /* Ignore the first NULL section */
+            if (symsec == 0)
+              continue;
 
             /*
              * See if the name is already in the string table.
@@ -961,7 +996,8 @@ namespace rld
                                          rap_sec,
                                          sec.offset + sec.osecs[symsec].offset +
                                          sym.value (),
-                                         sym.info ()));
+                                         sym.info (),
+                                         index));
 
             symtab_size += external::rap_size;
           }
@@ -1195,6 +1231,7 @@ namespace rld
                     << " section=" << section_names[ext.sec]
                     << " data=" << ext.data
                     << " value=0x" << std::hex << ext.value << std::dec
+                    << " index=0x" << ext.index
                     << std::endl;
 
         if ((ext.data & 0xffff0000) != 0)
@@ -1204,6 +1241,9 @@ namespace rld
         comp << (uint32_t) ((ext.sec << 16) | ext.data)
              << ext.name
              << ext.value;
+
+        /* Object index */
+        comp << ext.index;
       }
     }
 
@@ -1227,6 +1267,8 @@ namespace rld
 
         comp << header;
 
+        uint32_t index = 0;
+
         for (objects::iterator oi = objs.begin ();
              oi != objs.end ();
              ++oi)
@@ -1242,6 +1284,8 @@ namespace rld
                       << " sec.size=" << sec.size ()
                       << " sec.align=" << sec.alignment ()
                       << "  " << obj.obj.name ().full ()  << std::endl;
+
+          index++;
 
           for (relocations::const_iterator ri = relocs.begin ();
                ri != relocs.end ();
@@ -1283,6 +1327,7 @@ namespace rld
                           << " reloc.symvalue=" << reloc.symvalue
                           << " reloc.addend=" << reloc.addend
                           << " addend=" << addend
+                          << " reloc.symbinding=" << reloc.symbinding
                           << std::endl;
             }
             else
@@ -1332,10 +1377,14 @@ namespace rld
                         << " reloc.info=0x" << reloc.info << std::dec
                         << " reloc.offset=" << reloc.offset
                         << " reloc.symtype=" << reloc.symtype
+                        << " reloc.symbinding=" << reloc.symbinding
                         << std::endl;
             }
 
             comp << info << offset;
+            comp << reloc.symtype;
+            comp << reloc.symbinding;
+            comp << index;
 
             if (write_addend)
               comp << addend;
