@@ -894,9 +894,23 @@ namespace rld
             obj.secs[s].set_offset (pobj.secs[s]);
             sec_size[s] = obj.secs[s].offset + obj.secs[s].size ();
             sec_align[s] = obj.secs[s].alignment ();
-            sec_rela[s] = obj.secs[s].rela;
+            if (obj.secs[s].rela == true)
+              sec_rela[s] = obj.secs[s].rela;
+            else {}
           }
           ++poi;
+        } else {
+          /* 
+           * objs.begin()
+           * We assume all the obj files are all rela or rel type.
+           */	
+          for (int s = 0; s < rap_secs; ++s) {
+            sec_size[s] =  obj.secs[s].size ();
+            sec_align[s] = obj.secs[s].alignment ();
+            if (obj.secs[s].rela == true)
+              sec_rela[s] = true;
+            else {}
+          }
         }
 
         collect_symbols (obj, ++index);
