@@ -689,7 +689,9 @@ namespace rld
                         sec.relocs.end (),
                         reloc_offset_compare ());
 
-      sec.rela = fsec.rela;
+      if (fsec.rela == true)
+        sec.rela = fsec.rela;
+      else {}
     }
 
     external::external (const uint32_t name,
