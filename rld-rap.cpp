@@ -685,9 +685,44 @@ namespace rld
         sec.relocs.push_back (relocation (freloc, offset));
       }
 
+#if 0
       std::stable_sort (sec.relocs.begin (),
                         sec.relocs.end (),
                         reloc_offset_compare ());
+#endif
+
+      uint32_t pos = 0;
+      uint32_t count = 0;
+      for (relocations::iterator srb = sec.relocs.begin ();
+           srb != sec.relocs.end ();
+           srb+=(count), pos += (count))
+      {
+          relocations::iterator lrb;
+
+          relocation tmp1 = sec.relocs.at(pos);
+
+          count = 1;
+
+          for (lrb = srb + 1; lrb != sec.relocs.end (); lrb++)
+          {
+            uint32_t lpos;
+            
+            lpos = lrb - srb;
+            lpos = lpos +  pos;
+            relocation tmp2 = sec.relocs.at(lpos);
+
+            if (tmp1.symname == tmp2.symname) {
+                if (tmp2.info == 0x5) { /*Insert before tmp1*/
+                  sec.relocs.erase(lrb);
+                  sec.relocs.insert((srb), tmp2);
+                } else {
+                  sec.relocs.erase(lrb);
+                  sec.relocs.insert((srb+1), tmp2);
+                }
+              count ++;
+            }
+          }
+      }
 
       if (fsec.rela == true)
         sec.rela = fsec.rela;
