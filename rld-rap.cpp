@@ -1003,6 +1003,7 @@ namespace rld
         }
 
         /* Ignore the debug symbols */
+        debug_sym = obj.obj.get_section(sym.section_index()).name;
         if (debug_sym.find ("debug") != -1)
           continue;
 
@@ -1014,10 +1015,10 @@ namespace rld
         }
 
         if ((sym.type () == STT_OBJECT) || (sym.type () == STT_FUNC) || 
-            ((sym.binding () == STB_LOCAL) && (sym.type ()) == STT_NOTYPE))
+            ((sym.type ()) == STT_NOTYPE))
         {
           if ((sym.binding () == STB_GLOBAL) || (sym.binding () == STB_WEAK) ||
-            ((sym.binding () == STB_LOCAL) && (sym.type ()) == STT_NOTYPE))
+            (sym.binding () == STB_LOCAL))
           {
             int         symsec = sym.section_index ();
             sections    rap_sec = obj.find (symsec);
