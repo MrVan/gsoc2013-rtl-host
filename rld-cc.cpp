@@ -82,6 +82,24 @@ namespace rld
       rld::process::arg_container args;
 
       make_cc_command (args);
+
+      /*
+       * For Superh architecture
+       * -m4 means sh4, -m2 means sh2, -m2e means sh2e
+       * -ml means little endian
+       */
+      if (rld::cc::march == "shm4l") {
+        args.push_back("-m4");  
+        args.push_back("-ml");  
+      } else if (rld::cc::march == "shm4") {
+        args.push_back("-m4");  
+      } else if (rld::cc::march == "shm2l") {
+        args.push_back("-m2");  
+        args.push_back("-ml");  
+      } else if (rld::cc::march == "shm2") {
+        args.push_back("-m2");  
+      } else {}
+
       args.push_back ("-print-search-dirs");
 
       rld::process::tempfile out;
