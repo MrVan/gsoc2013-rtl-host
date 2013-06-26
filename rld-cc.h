@@ -34,6 +34,7 @@ namespace rld
   namespace cc
   {
     extern std::string cc;             //< The CC executable.
+    extern std::string cpuflags;
     extern std::string exec_prefix;    //< The CC executable prefix.
     extern std::string march;          //< The CC machine architecture.
     extern std::string mcpu;           //< The CC machine CPU.

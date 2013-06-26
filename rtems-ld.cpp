@@ -69,6 +69,7 @@ static struct option rld_opts[] = {
   { "exec-prefix", required_argument,      NULL,           'E' },
   { "march",       required_argument,      NULL,           'a' },
   { "mcpu",        required_argument,      NULL,           'c' },
+  { "cpuflags",       required_argument,      NULL,           'F' },
   { NULL,          0,                      NULL,            0 }
 };
 
@@ -187,7 +188,7 @@ main (int argc, char* argv[])
 
     while (true)
     {
-      int opt = ::getopt_long (argc, argv, "hvwVMnb:E:o:O:L:l:a:c:e:d:u:C:W:", rld_opts, NULL);
+      int opt = ::getopt_long (argc, argv, "hvwVMnb:E:o:O:L:l:a:c:e:d:u:C:W:F", rld_opts, NULL);
       if (opt < 0)
         break;
 
@@ -272,6 +273,10 @@ main (int argc, char* argv[])
 
         case 'b':
           base_name = optarg;
+          break;
+
+        case 'F':
+          rld::cc::cpuflags = optarg;
           break;
 
         case 'W':

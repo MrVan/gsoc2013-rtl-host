@@ -27,6 +27,7 @@ namespace rld
   namespace cc
   {
     std::string cc;
+    std::string cpuflags;
     std::string exec_prefix;
     std::string march;
     std::string mcpu;
@@ -60,6 +61,20 @@ namespace rld
         args.push_back ("-march=" + march);
       if (!mcpu.empty ())
         args.push_back ("-mcpu=" + mcpu);
+
+      std::string::iterator it, cur;
+      cur = cpuflags.begin();
+      std::string tmp;
+      for (it = cpuflags.begin(); it < cpuflags.end(); it++) {
+        if (*it == ',') {
+          tmp = std::string(cur, it);
+          args.push_back(tmp); 
+          cur = it + 1;
+        }
+      }
+
+      tmp = std::string(cur, it);
+      args.push_back(tmp); 
     }
 
     static bool
@@ -82,24 +97,6 @@ namespace rld
       rld::process::arg_container args;
 
       make_cc_command (args);
-
-      /*
-       * For Superh architecture
-       * -m4 means sh4, -m2 means sh2, -m2e means sh2e
-       * -ml means little endian
-       */
-      if (rld::cc::march == "shm4l") {
-        args.push_back("-m4");  
-        args.push_back("-ml");  
-      } else if (rld::cc::march == "shm4") {
-        args.push_back("-m4");  
-      } else if (rld::cc::march == "shm2l") {
-        args.push_back("-m2");  
-        args.push_back("-ml");  
-      } else if (rld::cc::march == "shm2") {
-        args.push_back("-m2");  
-      } else {}
-
       args.push_back ("-print-search-dirs");
 
       rld::process::tempfile out;
