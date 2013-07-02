@@ -87,37 +87,6 @@ elf_getdata(Elf_Scn *s, Elf_Data *d)
 		return (NULL);
 	}
 
-  if (s->s_elf->e_u.e_elf.e_ehdr.e_ehdr32->e_machine == EM_ARM) {
-    if ((sh_type == 0x70000003) || (sh_type == 0x70000001)) {
-      if ((d = _libelf_allocate_data(s)) == NULL) 
-        return (NULL);
-      d->d_buf = 0;
-      d->d_size = 0;
-      return (d);
-    }
-  }
-
-  if (s->s_elf->e_u.e_elf.e_ehdr.e_ehdr32->e_machine == EM_MIPS) {
-    if ((sh_type == 0x70000006) || (sh_type == 0x7000001e) ||
-        (sh_type == 0x6ffffff5)) {
-      if ((d = _libelf_allocate_data(s)) == NULL) 
-        return (NULL);
-      d->d_buf = 0;
-      d->d_size = 0;
-      return (d);
-    }
-  }
-
-  if (s->s_elf->e_u.e_elf.e_ehdr.e_ehdr32->e_machine == EM_PPC) {
-    if (sh_type == 0x6ffffff5) {
-      if ((d = _libelf_allocate_data(s)) == NULL) 
-        return (NULL);
-      d->d_buf = 0;
-      d->d_size = 0;
-      return (d);
-    }
-  }
-
 	if ((elftype = _libelf_xlate_shtype(sh_type)) < ELF_T_FIRST ||
 	    elftype > ELF_T_LAST || (sh_type != SHT_NOBITS &&
 	    sh_offset + sh_size > (uint64_t) e->e_rawsize)) {

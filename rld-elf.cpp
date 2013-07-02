@@ -182,7 +182,17 @@ namespace rld
       if (shdr.sh_type != SHT_NULL)
       {
         name_ = file_.get_string (shdr.sh_name);
-        data_ = ::elf_getdata (scn, 0);
+
+        if (((file_.machinetype () == EM_ARM) && 
+            ((shdr.sh_type == 0x70000003) || shdr.sh_type == 0x70000001)) ||
+           ((file_.machinetype () == EM_MIPS) && ((shdr.sh_type == 0x70000006) ||
+            (shdr.sh_type == 0x7000001e) || (shdr.sh_type == 0x6ffffff5))) ||
+           ((file_.machinetype () == EM_PPC) && (shdr.sh_type == 0x6ffffff5))) {
+        
+          data_ = ::elf_rawdata (scn, 0);
+
+        } else data_ = ::elf_getdata (scn, 0);
+
         if (!data_)
           libelf_error ("elf_getdata: " + name_ + '(' + file_.name () + ')');
       }
