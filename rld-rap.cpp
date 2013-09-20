@@ -1356,32 +1356,44 @@ namespace rld
 
             if ((reloc.symtype == STT_SECTION) || (reloc.symbinding == STB_LOCAL))
             {
-              int rap_symsect = obj.find (reloc.symsect);
-
               /*
-               * Bit 31 clear, bits 30:8 RAP section index.
+               * If reloc.symsect is 0, this means it is in common section.
+               * obj.find(0) will fail, because common sections are not
+               * included. In order to make the rap file correct, here we assign
+               * write_addend is true, else the rap file will be wrong.Actually
+               * all the files should be compiled with `-fno-common`.
                */
-              info |= rap_symsect << 8;
-
-              addend += (obj.secs[rap_symsect].offset +
-                         obj.secs[rap_symsect].osecs[reloc.symsect].offset +
-                         reloc.symvalue);
-
-              write_addend = true;
-
-              if (rld::verbose () >= RLD_VERBOSE_TRACE)
-                std::cout << "  " << std::setw (2) << sr
-                          << '/' << std::setw (2) << rc
-                          <<":  rsym: sect=" << section_names[rap_symsect]
-                          << " rap_symsect=" << rap_symsect
-                          << " sec.offset=" << obj.secs[rap_symsect].offset
-                          << " sec.osecs=" << obj.secs[rap_symsect].osecs[reloc.symsect].offset
-                          << " (" << obj.obj.get_section (reloc.symsect).name << ')'
-                          << " reloc.symsect=" << reloc.symsect
-                          << " reloc.symvalue=" << reloc.symvalue
-                          << " reloc.addend=" << reloc.addend
-                          << " addend=" << addend
-                          << std::endl;
+              if (reloc.symsect == 0)
+                write_addend = true;
+              else
+              {
+                int rap_symsect = obj.find (reloc.symsect);
+  
+                /*
+                 * Bit 31 clear, bits 30:8 RAP section index.
+                 */
+                info |= rap_symsect << 8;
+  
+                addend += (obj.secs[rap_symsect].offset +
+                           obj.secs[rap_symsect].osecs[reloc.symsect].offset +
+                           reloc.symvalue);
+  
+                write_addend = true;
+  
+                if (rld::verbose () >= RLD_VERBOSE_TRACE)
+                  std::cout << "  " << std::setw (2) << sr
+                            << '/' << std::setw (2) << rc
+                            <<":  rsym: sect=" << section_names[rap_symsect]
+                            << " rap_symsect=" << rap_symsect
+                            << " sec.offset=" << obj.secs[rap_symsect].offset
+                            << " sec.osecs=" << obj.secs[rap_symsect].osecs[reloc.symsect].offset
+                            << " (" << obj.obj.get_section (reloc.symsect).name << ')'
+                            << " reloc.symsect=" << reloc.symsect
+                            << " reloc.symvalue=" << reloc.symvalue
+                            << " reloc.addend=" << reloc.addend
+                            << " addend=" << addend
+                            << std::endl;
+              }
             }
             else
             {
