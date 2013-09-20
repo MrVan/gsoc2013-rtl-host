@@ -44,6 +44,7 @@
  * - @subpage rtems-ld
  * - @subpage rtems-syms
  * - @subpage rtems-rap
+ * - @subpage rtems-ra
  *
  * ____________________________________________________________________________
  * @copyright
@@ -430,6 +431,23 @@
  *
  * - @e Machine @e CPU (@b -c @b --mcpu): \n
  *   Set the machine architecture's CPU.
+ *
+ * - @e No @e File @e Details (@b -S @b --rap-strip): \n
+ *   If set this option, the file details will not be included in the
+ *   final rap file. The file detail part is for GDB use.
+ *
+ * - @e File @e paths (@b -R @b --rpath): \n
+ *   The path of the elf object file should be provied to rtems-ld. It
+ *   is used by GDB to search the elf object files.
+ *
+ * - @e Collect @e objects (@b -P @b --runtime-lib): \n
+ *   If set --runtime-lib, and not set --one-file, the object files
+ *   which are collected from the elf archive files will be merged into
+ *   the archive file following --runtime-lib.
+ *
+ * - @e One @e File (@b -s @b --one-file): \n
+ *   If set --one-file, all the object files which are collected will be
+ *   merged into the final rap file.
  */
 
 /**
@@ -442,4 +460,13 @@
  * @page rtems-rap RTEMS Application (RAP) Utility
  *
  * The symbols tool lets you see symbols in various RTEMS support file formats.
+ */
+
+/**
+ * @page rtems-ra RTEMS Application (RAP) Utility
+ *
+ * This tool is used to convert an elf archive file into a rap archive file.
+ * A example is like this:'rtems-ra --lib 3 --lib-path testcase --output-path
+ * ./ --no-stdlibs --cc /opt/rtems4.11/bin/arm-rtems4.11-gcc -Wl,-Bstatic'.
+ * This command will convert lib3.a into lib3.ra in the current dircetory.
  */
